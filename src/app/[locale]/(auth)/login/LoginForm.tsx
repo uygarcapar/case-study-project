@@ -60,7 +60,7 @@ export function LoginForm() {
       <CardHeader>
         <div>
           <CardTitle>{t("loginTitle")}</CardTitle>
-          <p className="mt-1 text-xs text-[var(--color-fg-muted)]">{tApp("name")}</p>
+          <p className="mt-1 text-xl text-[var(--color-fg)]">{tApp("name")}</p>
         </div>
       </CardHeader>
       <CardBody>

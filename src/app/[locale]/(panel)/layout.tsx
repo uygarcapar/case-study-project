@@ -17,8 +17,8 @@ export default async function PanelLayout({ children, params }: Props) {
     <div className="flex min-h-screen bg-[var(--color-bg)]">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col lg:pl-0">
-        <Header locale={locale} />
-        <main className="flex-1 px-4 py-6 lg:px-6">{children}</main>
+        <Header />
+        <main className="flex-1 px-4 py-4 lg:px-6">{children}</main>
       </div>
     </div>
   );

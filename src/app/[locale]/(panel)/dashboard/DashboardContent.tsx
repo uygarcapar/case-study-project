@@ -1,57 +1,92 @@
 "use client";
 
-import { Package, Users, CheckCircle2, AlertTriangle } from "lucide-react";
+import { useState } from "react";
+import {
+  Package,
+  Users,
+  ShoppingBag,
+  AlertTriangle,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { ProductPhoto } from "@/components/products/ProductPhoto";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Badge } from "@/components/ui/Badge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
-import { useListProductsQuery } from "@/store/slices/productsApi";
+import {
+  useDeleteProductMutation,
+  useListProductsQuery,
+} from "@/store/slices/productsApi";
 import { useListCustomersQuery } from "@/store/slices/customersApi";
+import { useAppDispatch } from "@/store/hooks";
+import { openProductForm } from "@/store/slices/uiSlice";
+import { ProductFormModal } from "@/components/products/ProductFormModal";
+import { useRole } from "@/lib/auth/useRole";
 import { formatCurrency } from "@/lib/utils";
+import type { ProductRow } from "@/types/database";
 
 const LOW_STOCK_THRESHOLD = 10;
 
 export function DashboardContent() {
   const t = useTranslations("dashboard");
-  const tStatus = useTranslations("products.status");
+  const tCommon = useTranslations("common");
+  const tProducts = useTranslations("products");
   const locale = useLocale() as "tr" | "en";
+  const dispatch = useAppDispatch();
+  const { canWrite } = useRole();
 
   const products = useListProductsQuery();
   const customers = useListCustomersQuery();
+  const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
+  const [pendingDelete, setPendingDelete] = useState<ProductRow | null>(null);
 
   const totalProducts = products.data?.length ?? 0;
   const totalCustomers = customers.data?.length ?? 0;
-  const activeProducts = products.data?.filter((p) => p.status === "active").length ?? 0;
+  const totalOrders =
+    customers.data?.reduce((sum, c) => sum + c.total_orders, 0) ?? 0;
   const lowStockCount =
     products.data?.filter((p) => p.stock <= LOW_STOCK_THRESHOLD).length ?? 0;
-  const recent = (products.data ?? []).slice(0, 5);
+  const recent = (products.data ?? []).slice(0, 10);
+
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    try {
+      await deleteProduct(pendingDelete.id).unwrap();
+      toast.success(tProducts("deleted"));
+      setPendingDelete(null);
+    } catch {
+      toast.error(tCommon("error"));
+    }
+  }
 
   const stats = [
     {
       label: t("stats.totalProducts"),
       value: totalProducts,
       icon: Package,
-      tone: "info" as const,
+      href: "/products",
     },
     {
       label: t("stats.totalCustomers"),
       value: totalCustomers,
       icon: Users,
-      tone: "neutral" as const,
+      href: "/customers",
     },
     {
-      label: t("stats.activeProducts"),
-      value: activeProducts,
-      icon: CheckCircle2,
-      tone: "success" as const,
+      label: t("stats.totalOrders"),
+      value: totalOrders,
+      icon: ShoppingBag,
+      href: "/customers?sort=total_orders_desc&highlight=total_orders",
     },
     {
       label: t("stats.lowStock"),
       value: lowStockCount,
       icon: AlertTriangle,
-      tone: "warning" as const,
+      href: "/products?sort=stock_asc&highlight=stock",
     },
   ];
 
@@ -59,90 +94,109 @@ export function DashboardContent() {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => (
-          <Card key={s.label}>
-            <CardBody className="flex items-center justify-between gap-3">
+          <Card key={s.label} className="relative">
+            <CardBody className="flex items-center justify-between gap-3 px-5 pt-8 pb-10">
               <div>
-                <div className="text-xs text-[var(--color-fg-muted)]">{s.label}</div>
+                <div className="text-sm font-medium text-[var(--color-fg-muted)]">{s.label}</div>
                 {products.isLoading || customers.isLoading ? (
-                  <Skeleton className="mt-2 h-7 w-16" />
+                  <Skeleton className="mt-2 h-8 w-20" />
                 ) : (
-                  <div className="mt-1 text-2xl font-semibold text-[var(--color-fg)]">
+                  <div className="mt-2 text-3xl font-semibold text-[var(--color-fg)]">
                     {s.value}
                   </div>
                 )}
               </div>
-              <div className="rounded-lg bg-[var(--color-surface-muted)] p-2 text-[var(--color-fg)]">
-                <s.icon className="h-5 w-5" />
+              <div className="p-2 text-[var(--color-fg)]">
+                <s.icon className="h-9 w-9" />
               </div>
             </CardBody>
+            <Link
+              href={s.href}
+              className="absolute bottom-3 right-4 text-xs font-medium text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:underline"
+            >
+              {t("viewAll")}
+            </Link>
           </Card>
         ))}
       </div>
 
-      <Card>
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-          <div className="text-sm font-semibold text-[var(--color-fg)]">
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-[var(--color-fg)]">
             {t("recentProducts")}
-          </div>
+          </h2>
           <Link href="/products">
             <Button variant="ghost" size="sm">
               {t("viewAll")}
             </Button>
           </Link>
         </div>
-        <div className="divide-y divide-[var(--color-border)]">
-          {products.isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3">
-                <Skeleton className="h-10 w-10 rounded" />
-                <Skeleton className="h-4 w-40" />
-                <div className="ml-auto">
-                  <Skeleton className="h-4 w-16" />
-                </div>
+
+        {products.isLoading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <Skeleton className="aspect-square w-full rounded-2xl border border-[var(--color-border)]" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/3" />
               </div>
-            ))
-          ) : recent.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-[var(--color-fg-muted)]">
-              {t("noData")}
-            </div>
-          ) : (
-            recent.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-[var(--color-surface-muted)]">
-                  {p.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.image_url}
-                      alt={p.name[locale]}
-                      className="h-full w-full object-cover"
-                    />
+            ))}
+          </div>
+        ) : recent.length === 0 ? (
+          <div className="text-center text-sm text-[var(--color-fg-muted)]">
+            {t("noData")}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {recent.map((p) => (
+              <div key={p.id} className="flex flex-col">
+                <div className="group relative aspect-square w-full overflow-hidden mb-3 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+                  <ProductPhoto src={p.image_url} alt={p.name[locale]} />
+                  {canWrite && (
+                    <div className="pointer-events-none absolute inset-0 flex items-start justify-end gap-1 p-3 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => dispatch(openProductForm(p))}
+                        aria-label={tCommon("edit")}
+                        className="pointer-events-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[var(--color-border)] bg-white/90 text-[var(--color-fg)] backdrop-blur transition-colors hover:bg-white dark:bg-black/60 dark:text-white dark:hover:bg-black/80"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPendingDelete(p)}
+                        aria-label={tCommon("delete")}
+                        className="pointer-events-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[var(--color-border)] bg-white/90 text-[var(--color-danger)] backdrop-blur transition-colors hover:bg-white dark:bg-black/60 dark:hover:bg-black/80"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-[var(--color-fg)]">
-                    {p.name[locale]}
-                  </div>
-                  <div className="text-xs text-[var(--color-fg-muted)]">{p.category}</div>
+                <div className="truncate text-sm px-2 font-medium text-[var(--color-fg)]">
+                  {p.name[locale]}
                 </div>
-                <Badge
-                  tone={
-                    p.status === "active"
-                      ? "success"
-                      : p.status === "draft"
-                        ? "warning"
-                        : "neutral"
-                  }
-                >
-                  {tStatus(p.status)}
-                </Badge>
-                <div className="hidden text-sm text-[var(--color-fg)] sm:block">
+                <div className="text-sm font-normal px-2 text-[var(--color-fg-muted)]">
                   {formatCurrency(p.price, locale)}
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={tCommon("delete")}
+        description={tProducts("deleteConfirm")}
+        confirmLabel={tCommon("delete")}
+        cancelLabel={tCommon("cancel")}
+        busy={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
+
+      <ProductFormModal />
     </div>
   );
 }

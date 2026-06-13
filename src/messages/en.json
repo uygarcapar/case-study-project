@@ -20,6 +20,7 @@
   "header": {
     "themeLight": "Light theme",
     "themeDark": "Dark theme",
+    "theme": "Theme",
     "locale": "Language",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
@@ -42,6 +43,7 @@
       "totalProducts": "Total Products",
       "totalCustomers": "Total Customers",
       "activeProducts": "Active Products",
+      "totalOrders": "Total Orders",
       "lowStock": "Low Stock"
     },
     "recentProducts": "Recently Added Products",
@@ -56,13 +58,6 @@
     "filterCategory": "Category",
     "filterStatus": "Status",
     "filterAll": "All",
-    "sort": "Sort",
-    "sortNameAsc": "Name (A-Z)",
-    "sortNameDesc": "Name (Z-A)",
-    "sortPriceAsc": "Price (low to high)",
-    "sortPriceDesc": "Price (high to low)",
-    "sortStockAsc": "Stock (low to high)",
-    "sortStockDesc": "Stock (high to low)",
     "table": {
       "image": "Image",
       "name": "Name",
@@ -78,10 +73,18 @@
       "descriptionTr": "Description (Turkish)",
       "descriptionEn": "Description (English)",
       "category": "Category",
-      "price": "Price (₺)",
+      "price": "Price",
       "stock": "Stock",
       "status": "Status",
       "imageUrl": "Image URL",
+      "image": "Image",
+      "uploadImage": "Upload from computer",
+      "replaceImage": "Replace image",
+      "removeImage": "Remove image",
+      "uploading": "Uploading...",
+      "fileTooLarge": "File cannot exceed 5MB",
+      "invalidImageType": "Only JPG, PNG, WEBP or GIF allowed",
+      "uploadFailed": "Failed to upload image",
       "submitCreate": "Create Product",
       "submitUpdate": "Save Changes",
       "saving": "Saving..."
@@ -92,6 +95,8 @@
       "archived": "Archived"
     },
     "empty": "No products yet",
+    "clearHighlight": "Clear column highlight",
+    "highlightedColumn": "Highlighted: {column}",
     "deleted": "Product deleted",
     "created": "Product created",
     "updated": "Product updated",
@@ -144,11 +149,14 @@
     "noPermission": "You do not have permission for this action",
     "error": "Something went wrong",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "clearHighlight": "Clear column highlight"
   },
   "roles": {
     "full_access": "Full Access",
-    "reader": "Reader"
+    "reader": "Reader",
+    "full_accessDescription": "You can perform all CRUD operations",
+    "readerDescription": "You can only view data"
   },
   "validation": {
     "errorRequired": "This field is required",

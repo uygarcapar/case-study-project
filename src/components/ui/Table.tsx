@@ -2,18 +2,14 @@ import { cn } from "@/lib/utils";
 import type { HTMLAttributes, TableHTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from "react";
 
 export function Table({ className, ...rest }: TableHTMLAttributes<HTMLTableElement>) {
-  return (
-    <div className="overflow-x-auto">
-      <table className={cn("w-full text-left text-sm", className)} {...rest} />
-    </div>
-  );
+  return <table className={cn("w-full text-left text-sm", className)} {...rest} />;
 }
 
 export function THead({ className, ...rest }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
       className={cn(
-        "border-b border-[var(--color-border)] bg-[var(--color-surface-muted)] text-xs uppercase text-[var(--color-fg-muted)]",
+        "sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)] text-xs uppercase text-[var(--color-fg-muted)]",
         className,
       )}
       {...rest}
@@ -22,13 +18,19 @@ export function THead({ className, ...rest }: HTMLAttributes<HTMLTableSectionEle
 }
 
 export function TBody({ className, ...rest }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn("divide-y divide-[var(--color-border)]", className)} {...rest} />;
+  return (
+    <tbody
+      className={cn(
+        "divide-y divide-[var(--color-border)] [&_tr]:transition-colors [&_tr:hover]:bg-[var(--color-surface-muted)]/40",
+        className,
+      )}
+      {...rest}
+    />
+  );
 }
 
 export function TR({ className, ...rest }: HTMLAttributes<HTMLTableRowElement>) {
-  return (
-    <tr className={cn("hover:bg-[var(--color-surface-muted)]/40 transition-colors", className)} {...rest} />
-  );
+  return <tr className={cn(className)} {...rest} />;
 }
 
 export function TH({ className, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {

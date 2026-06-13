@@ -20,6 +20,7 @@
   "header": {
     "themeLight": "Açık tema",
     "themeDark": "Koyu tema",
+    "theme": "Tema",
     "locale": "Dil",
     "openMenu": "Menüyü aç",
     "closeMenu": "Menüyü kapat"
@@ -42,6 +43,7 @@
       "totalProducts": "Toplam Ürün",
       "totalCustomers": "Toplam Müşteri",
       "activeProducts": "Aktif Ürün",
+      "totalOrders": "Toplam Sipariş",
       "lowStock": "Düşük Stok"
     },
     "recentProducts": "Son Eklenen Ürünler",
@@ -56,13 +58,6 @@
     "filterCategory": "Kategori",
     "filterStatus": "Durum",
     "filterAll": "Tümü",
-    "sort": "Sırala",
-    "sortNameAsc": "İsim (A-Z)",
-    "sortNameDesc": "İsim (Z-A)",
-    "sortPriceAsc": "Fiyat (artan)",
-    "sortPriceDesc": "Fiyat (azalan)",
-    "sortStockAsc": "Stok (artan)",
-    "sortStockDesc": "Stok (azalan)",
     "table": {
       "image": "Görsel",
       "name": "İsim",
@@ -78,10 +73,18 @@
       "descriptionTr": "Açıklama (Türkçe)",
       "descriptionEn": "Açıklama (İngilizce)",
       "category": "Kategori",
-      "price": "Fiyat (₺)",
+      "price": "Fiyat",
       "stock": "Stok",
       "status": "Durum",
       "imageUrl": "Görsel URL",
+      "image": "Görsel",
+      "uploadImage": "Bilgisayardan yükle",
+      "replaceImage": "Görseli değiştir",
+      "removeImage": "Görseli kaldır",
+      "uploading": "Yükleniyor...",
+      "fileTooLarge": "Dosya 5MB'tan büyük olamaz",
+      "invalidImageType": "Sadece JPG, PNG, WEBP veya GIF yüklenebilir",
+      "uploadFailed": "Görsel yüklenirken hata oluştu",
       "submitCreate": "Ürünü Oluştur",
       "submitUpdate": "Değişiklikleri Kaydet",
       "saving": "Kaydediliyor..."
@@ -92,6 +95,8 @@
       "archived": "Arşiv"
     },
     "empty": "Henüz ürün yok",
+    "clearHighlight": "Sütun vurgusunu kaldır",
+    "highlightedColumn": "Vurgulanan: {column}",
     "deleted": "Ürün silindi",
     "created": "Ürün oluşturuldu",
     "updated": "Ürün güncellendi",
@@ -144,11 +149,14 @@
     "noPermission": "Bu işlemi yapma yetkiniz yok",
     "error": "Bir hata oluştu",
     "yes": "Evet",
-    "no": "Hayır"
+    "no": "Hayır",
+    "clearHighlight": "Sütun vurgusunu kaldır"
   },
   "roles": {
     "full_access": "Tam Yetki",
-    "reader": "Görüntüleyici"
+    "reader": "Görüntüleyici",
+    "full_accessDescription": "Tüm CRUD işlemlerini gerçekleştirebilirsiniz",
+    "readerDescription": "Yalnızca verileri görüntüleyebilirsiniz"
   },
   "validation": {
     "errorRequired": "Bu alan zorunludur",

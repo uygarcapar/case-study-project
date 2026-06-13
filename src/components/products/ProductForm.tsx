@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { ImageIcon, Trash2, Upload } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { Link } from "@/i18n/navigation";
 import {
   productCategories,
@@ -22,12 +24,19 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
 } from "@/store/slices/productsApi";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_SIZE,
+  uploadProductImage,
+} from "@/lib/supabase/storage";
 import type { ProductRow } from "@/types/database";
 
 type Props = {
   mode: "create" | "update";
   initial?: ProductRow;
   locale: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 };
 
 function getValidationMessage(t: (key: string) => string, code?: string) {
@@ -39,7 +48,7 @@ function getValidationMessage(t: (key: string) => string, code?: string) {
   return code;
 }
 
-export function ProductForm({ mode, initial, locale }: Props) {
+export function ProductForm({ mode, initial, locale, onSuccess, onCancel }: Props) {
   const t = useTranslations("products.form");
   const tProducts = useTranslations("products");
   const tStatus = useTranslations("products.status");
@@ -48,8 +57,56 @@ export function ProductForm({ mode, initial, locale }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
+  // Image state managed outside RHF (file + preview + removed flag)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    initial?.image_url ?? null,
+  );
+  const [imageRemoved, setImageRemoved] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
+
+  function onFileSelect(e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(f.type)) {
+      toast.error(t("invalidImageType"));
+      e.target.value = "";
+      return;
+    }
+    if (f.size > MAX_IMAGE_SIZE) {
+      toast.error(t("fileTooLarge"));
+      e.target.value = "";
+      return;
+    }
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    const url = URL.createObjectURL(f);
+    objectUrlRef.current = url;
+    setImageFile(f);
+    setImagePreview(url);
+    setImageRemoved(false);
+  }
+
+  function onRemoveImage() {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    setImageFile(null);
+    setImagePreview(null);
+    setImageRemoved(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<ProductFormValues>({
@@ -85,6 +142,18 @@ export function ProductForm({ mode, initial, locale }: Props) {
   async function onSubmit(values: ProductFormValues) {
     setSubmitting(true);
     try {
+      let imageUrl: string | null = initial?.image_url ?? null;
+      if (imageRemoved) imageUrl = null;
+      if (imageFile) {
+        try {
+          const result = await uploadProductImage(imageFile);
+          imageUrl = result.url;
+        } catch {
+          toast.error(t("uploadFailed"));
+          return;
+        }
+      }
+
       const payload = {
         name: { tr: values.name_tr, en: values.name_en },
         description:
@@ -95,7 +164,7 @@ export function ProductForm({ mode, initial, locale }: Props) {
         price: values.price,
         stock: values.stock,
         status: values.status,
-        image_url: values.image_url ? values.image_url : null,
+        image_url: imageUrl,
       };
       if (mode === "create") {
         await createProduct(payload).unwrap();
@@ -104,8 +173,12 @@ export function ProductForm({ mode, initial, locale }: Props) {
         await updateProduct({ id: initial.id, patch: payload }).unwrap();
         toast.success(tProducts("updated"));
       }
-      router.push(`/${locale}/products`);
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/${locale}/products`);
+        router.refresh();
+      }
     } catch {
       toast.error(tCommon("error"));
     } finally {
@@ -159,12 +232,20 @@ export function ProductForm({ mode, initial, locale }: Props) {
               </option>
             ))}
           </Select>
-          <Input
-            type="number"
-            step="0.01"
-            label={t("price")}
-            error={getValidationMessage(tValidation, errors.price?.message)}
-            {...register("price", { valueAsNumber: true })}
+          <Controller
+            control={control}
+            name="price"
+            render={({ field, fieldState }) => (
+              <MoneyInput
+                label={t("price")}
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                error={getValidationMessage(tValidation, fieldState.error?.message)}
+              />
+            )}
           />
           <Input
             type="number"
@@ -173,24 +254,70 @@ export function ProductForm({ mode, initial, locale }: Props) {
             error={getValidationMessage(tValidation, errors.stock?.message)}
             {...register("stock", { valueAsNumber: true })}
           />
+
           <div className="md:col-span-2">
-            <Input
-              type="url"
-              label={t("imageUrl")}
-              placeholder="https://..."
-              error={getValidationMessage(tValidation, errors.image_url?.message)}
-              {...register("image_url")}
-            />
+            <label className="text-sm font-medium text-[var(--color-fg)]">
+              {t("image")}
+            </label>
+            <div className="mt-2 flex items-center gap-4">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+                {imagePreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={imagePreview}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <ImageIcon className="h-8 w-8 text-[var(--color-fg-muted)]" />
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ALLOWED_IMAGE_TYPES.join(",")}
+                  className="hidden"
+                  onChange={onFileSelect}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4" />
+                  {imagePreview ? t("replaceImage") : t("uploadImage")}
+                </Button>
+                {imagePreview && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onRemoveImage}
+                  >
+                    <Trash2 className="h-4 w-4 text-[var(--color-danger)]" />
+                    {t("removeImage")}
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </CardBody>
       </Card>
 
       <div className="flex items-center justify-end gap-2">
-        <Link href="/products">
-          <Button type="button" variant="ghost">
+        {onCancel ? (
+          <Button type="button" variant="ghost" onClick={onCancel}>
             {tCommon("cancel")}
           </Button>
-        </Link>
+        ) : (
+          <Link href="/products">
+            <Button type="button" variant="ghost">
+              {tCommon("cancel")}
+            </Button>
+          </Link>
+        )}
         <Button type="submit" disabled={submitting}>
           {submitting
             ? t("saving")

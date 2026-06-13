@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { ChevronDown } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
@@ -26,17 +27,23 @@ export function LocaleSwitcher() {
   }
 
   return (
-    <select
-      aria-label={t("locale")}
-      value={locale}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-sm text-[var(--color-fg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-    >
-      {routing.locales.map((l) => (
-        <option key={l} value={l}>
-          {l.toUpperCase()}
-        </option>
-      ))}
-    </select>
+    <div className="relative">
+      <select
+        aria-label={t("locale")}
+        value={locale}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 appearance-none cursor-pointer rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] pl-3 pr-8 text-sm text-[var(--color-fg)] outline-none focus:outline-none focus-visible:outline-none"
+      >
+        {routing.locales.map((l) => (
+          <option key={l} value={l}>
+            {l.toUpperCase()}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-fg-muted)]"
+        aria-hidden="true"
+      />
+    </div>
   );
 }

@@ -26,6 +26,8 @@ type Props = {
   mode: "create" | "update";
   initial?: CustomerRow;
   locale: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 };
 
 function getValidationMessage(t: (key: string) => string, code?: string) {
@@ -35,7 +37,7 @@ function getValidationMessage(t: (key: string) => string, code?: string) {
   return code;
 }
 
-export function CustomerForm({ mode, initial, locale }: Props) {
+export function CustomerForm({ mode, initial, locale, onSuccess, onCancel }: Props) {
   const t = useTranslations("customers.form");
   const tCustomers = useTranslations("customers");
   const tStatus = useTranslations("customers.status");
@@ -87,8 +89,12 @@ export function CustomerForm({ mode, initial, locale }: Props) {
         await updateCustomer({ id: initial.id, patch: payload }).unwrap();
         toast.success(tCustomers("updated"));
       }
-      router.push(`/${locale}/customers`);
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/${locale}/customers`);
+        router.refresh();
+      }
     } catch {
       toast.error(tCommon("error"));
     } finally {
@@ -136,11 +142,17 @@ export function CustomerForm({ mode, initial, locale }: Props) {
       </Card>
 
       <div className="flex items-center justify-end gap-2">
-        <Link href="/customers">
-          <Button type="button" variant="ghost">
+        {onCancel ? (
+          <Button type="button" variant="ghost" onClick={onCancel}>
             {tCommon("cancel")}
           </Button>
-        </Link>
+        ) : (
+          <Link href="/customers">
+            <Button type="button" variant="ghost">
+              {tCommon("cancel")}
+            </Button>
+          </Link>
+        )}
         <Button type="submit" disabled={submitting}>
           {submitting
             ? tCommon("loading")

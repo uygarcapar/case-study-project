@@ -2,23 +2,51 @@
 
 import { Pencil, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SortableTH } from "@/components/ui/SortableTH";
+import { ProductPhoto } from "./ProductPhoto";
+import type { SortKey } from "./ProductFilters";
 import { useRole } from "@/lib/auth/useRole";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { ProductRow } from "@/types/database";
+
+export type HighlightColumn = "stock" | "status";
 
 type Props = {
   products: ProductRow[];
   loading: boolean;
+  loadingMore?: boolean;
   onDelete: (product: ProductRow) => void;
+  onEdit: (product: ProductRow) => void;
+  highlightColumn?: HighlightColumn;
+  rootRef?: (node: HTMLDivElement | null) => void;
+  sentinelRef?: (node: HTMLDivElement | null) => void;
+  showSentinel?: boolean;
+  currentSort?: SortKey;
+  onSortChange?: (sort: SortKey) => void;
 };
 
-export function ProductTable({ products, loading, onDelete }: Props) {
+const HIGHLIGHT_TH = "bg-[var(--color-warning)]/20 text-[var(--color-fg)]";
+const HIGHLIGHT_TD = "bg-[var(--color-warning)]/10";
+const SKELETON_ROW_COUNT = 3;
+
+export function ProductTable({
+  products,
+  loading,
+  loadingMore = false,
+  onDelete,
+  onEdit,
+  highlightColumn,
+  rootRef,
+  sentinelRef,
+  showSentinel = false,
+  currentSort = "newest",
+  onSortChange,
+}: Props) {
   const t = useTranslations("products");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("products.status");
@@ -27,40 +55,124 @@ export function ProductTable({ products, loading, onDelete }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3 last:border-b-0">
-            <Skeleton className="h-10 w-10 rounded" />
-            <Skeleton className="h-4 w-40" />
-            <div className="ml-auto flex gap-3">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-12" />
-            </div>
-          </div>
-        ))}
+      <div className="overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <Table>
+          <THead>
+            <TR>
+              <TH className="w-16">{t("table.image")}</TH>
+              <TH>{t("table.name")}</TH>
+              <TH>{t("table.category")}</TH>
+              <TH className="text-right">{t("table.price")}</TH>
+              <TH className="text-right">{t("table.stock")}</TH>
+              <TH>{t("table.status")}</TH>
+              <TH className="text-right">{tCommon("actions")}</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <TR key={i}>
+                <TD>
+                  <Skeleton className="h-10 w-10 rounded" />
+                </TD>
+                <TD>
+                  <Skeleton className="h-4 w-40" />
+                </TD>
+                <TD>
+                  <Skeleton className="h-4 w-20" />
+                </TD>
+                <TD className="text-right">
+                  <Skeleton className="ml-auto h-4 w-16" />
+                </TD>
+                <TD className="text-right">
+                  <Skeleton className="ml-auto h-4 w-10" />
+                </TD>
+                <TD>
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </TD>
+                <TD>
+                  <Skeleton className="ml-auto h-4 w-12" />
+                </TD>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
       </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         <EmptyState title={t("empty")} />
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+    <div
+      ref={rootRef}
+      className="max-h-[60vh] overflow-auto rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)]"
+    >
       <Table>
         <THead>
           <TR>
             <TH className="w-16">{t("table.image")}</TH>
-            <TH>{t("table.name")}</TH>
-            <TH>{t("table.category")}</TH>
-            <TH className="text-right">{t("table.price")}</TH>
-            <TH className="text-right">{t("table.stock")}</TH>
-            <TH>{t("table.status")}</TH>
+            {onSortChange ? (
+              <SortableTH
+                field="name"
+                currentSort={currentSort}
+                onSortChange={(s) => onSortChange(s as SortKey)}
+              >
+                {t("table.name")}
+              </SortableTH>
+            ) : (
+              <TH>{t("table.name")}</TH>
+            )}
+            {onSortChange ? (
+              <SortableTH
+                field="category"
+                currentSort={currentSort}
+                onSortChange={(s) => onSortChange(s as SortKey)}
+              >
+                {t("table.category")}
+              </SortableTH>
+            ) : (
+              <TH>{t("table.category")}</TH>
+            )}
+            {onSortChange ? (
+              <SortableTH
+                field="price"
+                currentSort={currentSort}
+                onSortChange={(s) => onSortChange(s as SortKey)}
+                align="right"
+              >
+                {t("table.price")}
+              </SortableTH>
+            ) : (
+              <TH className="text-right">{t("table.price")}</TH>
+            )}
+            {onSortChange ? (
+              <SortableTH
+                field="stock"
+                currentSort={currentSort}
+                onSortChange={(s) => onSortChange(s as SortKey)}
+                align="right"
+              >
+                {t("table.stock")}
+              </SortableTH>
+            ) : (
+              <TH
+                className={cn(
+                  "text-right",
+                  highlightColumn === "stock" && HIGHLIGHT_TH,
+                )}
+              >
+                {t("table.stock")}
+              </TH>
+            )}
+            <TH className={cn(highlightColumn === "status" && HIGHLIGHT_TH)}>
+              {t("table.status")}
+            </TH>
             <TH className="text-right">{tCommon("actions")}</TH>
           </TR>
         </THead>
@@ -68,16 +180,12 @@ export function ProductTable({ products, loading, onDelete }: Props) {
           {products.map((p) => (
             <TR key={p.id}>
               <TD>
-                <div className="h-10 w-10 overflow-hidden rounded bg-[var(--color-surface-muted)]">
-                  {p.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.image_url}
-                      alt={p.name[locale]}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  )}
+                <div className="relative h-10 w-10 overflow-hidden rounded bg-[var(--color-surface-muted)]">
+                  <ProductPhoto
+                    src={p.image_url}
+                    alt={p.name[locale]}
+                    iconClassName="h-5 w-5"
+                  />
                 </div>
               </TD>
               <TD>
@@ -94,8 +202,15 @@ export function ProductTable({ products, loading, onDelete }: Props) {
               <TD className="text-right tabular-nums">
                 {formatCurrency(p.price, locale)}
               </TD>
-              <TD className="text-right tabular-nums">{p.stock}</TD>
-              <TD>
+              <TD
+                className={cn(
+                  "text-right tabular-nums",
+                  highlightColumn === "stock" && HIGHLIGHT_TD,
+                )}
+              >
+                {p.stock}
+              </TD>
+              <TD className={cn(highlightColumn === "status" && HIGHLIGHT_TD)}>
                 <Badge
                   tone={
                     p.status === "active"
@@ -112,11 +227,14 @@ export function ProductTable({ products, loading, onDelete }: Props) {
                 <div className="flex justify-end gap-1">
                   {canWrite ? (
                     <>
-                      <Link href={`/products/${p.id}/edit`}>
-                        <Button variant="ghost" size="sm" aria-label={tCommon("edit")}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={tCommon("edit")}
+                        onClick={() => onEdit(p)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -133,8 +251,37 @@ export function ProductTable({ products, loading, onDelete }: Props) {
               </TD>
             </TR>
           ))}
+          {loadingMore &&
+            Array.from({ length: SKELETON_ROW_COUNT }).map((_, i) => (
+              <TR key={`skeleton-${i}`}>
+                <TD>
+                  <Skeleton className="h-10 w-10 rounded" />
+                </TD>
+                <TD>
+                  <Skeleton className="h-4 w-40" />
+                </TD>
+                <TD>
+                  <Skeleton className="h-4 w-20" />
+                </TD>
+                <TD className="text-right">
+                  <Skeleton className="ml-auto h-4 w-16" />
+                </TD>
+                <TD className="text-right">
+                  <Skeleton className="ml-auto h-4 w-10" />
+                </TD>
+                <TD>
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </TD>
+                <TD>
+                  <Skeleton className="ml-auto h-4 w-12" />
+                </TD>
+              </TR>
+            ))}
         </TBody>
       </Table>
+      {showSentinel && (
+        <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
+      )}
     </div>
   );
 }

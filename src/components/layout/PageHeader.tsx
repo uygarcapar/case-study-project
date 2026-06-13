@@ -14,12 +14,12 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        "mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-fg)]">{title}</h1>
+        <h1 className="text-[40px] font-semibold text-[var(--color-fg)]">{title}</h1>
         {description && (
           <p className="mt-1 text-sm text-[var(--color-fg-muted)]">{description}</p>
         )}

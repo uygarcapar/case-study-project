@@ -13,11 +13,7 @@ export function ThemeToggle() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    try {
-      localStorage.setItem("theme", theme);
-    } catch {
-      // ignore: storage may be unavailable
-    }
+    document.cookie = `theme=${theme}; path=/; max-age=31536000; SameSite=Lax`;
   }, [theme]);
 
   const isDark = theme === "dark";
@@ -25,7 +21,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => dispatch(toggleTheme())}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-surface-muted)]"
+      className="inline-flex h-9 w-9 items-center justify-center cursor-pointer rounded-xl border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-surface-muted)]"
       aria-label={isDark ? t("themeLight") : t("themeDark")}
       title={isDark ? t("themeLight") : t("themeDark")}
     >

@@ -38,7 +38,7 @@ export function Breadcrumb() {
 
   return (
     <nav aria-label="Breadcrumb">
-      <ol className="flex flex-wrap items-center gap-1 text-xs text-[var(--color-fg-muted)]">
+      <ol className="flex flex-wrap items-center gap-1 text-[14px] text-[var(--color-fg-muted)]">
         {crumbs.map((c, idx) => (
           <Fragment key={`${c.label}-${idx}`}>
             {idx > 0 && <ChevronRight className="h-3 w-3" aria-hidden="true" />}

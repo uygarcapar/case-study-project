@@ -1,8 +1,9 @@
 "use client";
 
+import { startTransition, useOptimistic } from "react";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Package, Users, X } from "lucide-react";
-import { usePathname, Link } from "@/i18n/navigation";
+import { Boxes, LayoutDashboard, Package, Users, X } from "lucide-react";
+import { usePathname, useRouter, Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setSidebarOpen } from "@/store/slices/uiSlice";
 import { cn } from "@/lib/utils";
@@ -18,11 +19,32 @@ export function Sidebar() {
   const tApp = useTranslations("app");
   const tHeader = useTranslations("header");
   const pathname = usePathname();
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const open = useAppSelector((s) => s.ui.sidebarOpen);
 
+  const [optimisticPath, setOptimisticPath] = useOptimistic(pathname);
+
   function isActive(href: string) {
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return optimisticPath === href || optimisticPath.startsWith(`${href}/`);
+  }
+
+  function onNavigate(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    if (
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey ||
+      e.button !== 0
+    ) {
+      return;
+    }
+    e.preventDefault();
+    dispatch(setSidebarOpen(false));
+    startTransition(() => {
+      setOptimisticPath(href);
+      router.push(href);
+    });
   }
 
   return (
@@ -37,18 +59,18 @@ export function Sidebar() {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] transition-transform",
-          "lg:static lg:translate-x-0",
+          "lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
         aria-label="Sidebar"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4">
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-[var(--color-fg)]">
-              {tApp("name")}
+        <div className="flex items-center justify-between gap-3 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-primary)] text-[var(--color-primary-fg)]">
+              <Boxes className="h-5 w-5" />
             </span>
-            <span className="text-xs text-[var(--color-fg-muted)]">
-              {tApp("tagline")}
+            <span className="text-xl font-normal text-[var(--color-fg)]">
+              {tApp("name")}
             </span>
           </div>
           <button
@@ -68,9 +90,10 @@ export function Sidebar() {
                 <li key={href}>
                   <Link
                     href={href}
-                    onClick={() => dispatch(setSidebarOpen(false))}
+                    prefetch={true}
+                    onClick={(e) => onNavigate(e, href)}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "squircle flex items-center gap-2 overflow-hidden rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
                       active
                         ? "bg-[var(--color-primary)] text-[var(--color-primary-fg)]"
                         : "text-[var(--color-fg)] hover:bg-[var(--color-surface-muted)]",

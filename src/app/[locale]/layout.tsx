@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { routing } from "@/i18n/routing";
 import { Providers } from "@/store/Providers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -31,6 +32,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
 
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get("theme")?.value;
+  const initialTheme: "light" | "dark" = themeCookie === "dark" ? "dark" : "light";
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -49,25 +54,15 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html
       lang={locale}
+      data-theme={initialTheme}
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                var t = localStorage.getItem('theme');
-                if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                document.documentElement.dataset.theme = t;
-              } catch (e) {}
-            `,
-          }}
-        />
-      </head>
       <body className="min-h-screen bg-bg text-fg">
         <NextIntlClientProvider>
-          <Providers initialUser={initialUser}>{children}</Providers>
+          <Providers initialUser={initialUser} initialTheme={initialTheme}>
+            {children}
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>

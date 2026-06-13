@@ -5,7 +5,7 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]",
+        "rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]",
         className,
       )}
       {...rest}
@@ -28,6 +28,6 @@ export function CardBody({ className, ...rest }: HTMLAttributes<HTMLDivElement>)
 
 export function CardTitle({ className, ...rest }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2 className={cn("text-sm font-semibold text-[var(--color-fg)]", className)} {...rest} />
+    <h2 className={cn("text-sm font-normal text-[var(--color-fg-muted)] ", className)} {...rest} />
   );
 }

@@ -3,10 +3,8 @@ import { cn } from "@/lib/utils";
 export function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={cn(
-        "animate-pulse rounded-md bg-[var(--color-surface-muted)]",
-        className,
-      )}
+      aria-hidden="true"
+      className={cn("shimmer rounded-md bg-[var(--color-surface-muted)]", className)}
     />
   );
 }
