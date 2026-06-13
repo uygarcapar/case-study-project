@@ -4,9 +4,20 @@ import userEvent from "@testing-library/user-event";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { renderWithProviders } from "./test-utils";
 
+function getCookie(name: string): string | null {
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.split("=")[1]) : null;
+}
+
+function clearCookie(name: string) {
+  document.cookie = `${name}=; path=/; max-age=0`;
+}
+
 describe("ThemeToggle", () => {
   beforeEach(() => {
-    localStorage.clear();
+    clearCookie("theme");
     document.documentElement.dataset.theme = "light";
   });
 
@@ -31,14 +42,14 @@ describe("ThemeToggle", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 
-  it("persists theme choice to localStorage on toggle", async () => {
+  it("persists theme choice to cookie on toggle", async () => {
     const user = userEvent.setup();
     renderWithProviders(<ThemeToggle />);
 
     await user.click(screen.getByRole("button"));
-    expect(localStorage.getItem("theme")).toBe("dark");
+    expect(getCookie("theme")).toBe("dark");
 
     await user.click(screen.getByRole("button"));
-    expect(localStorage.getItem("theme")).toBe("light");
+    expect(getCookie("theme")).toBe("light");
   });
 });
