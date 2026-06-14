@@ -58,8 +58,8 @@ export function Sidebar() {
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] transition-transform",
-          "lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-full flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] transition-transform",
+          "lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
         aria-label="Sidebar"

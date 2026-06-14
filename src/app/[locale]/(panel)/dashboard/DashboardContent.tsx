@@ -147,7 +147,7 @@ export function DashboardContent() {
             {t("noData")}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {recent.map((p) => (
               <div key={p.id} className="flex flex-col">
                 <div className="group relative aspect-square w-full overflow-hidden mb-3 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
