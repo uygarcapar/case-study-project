@@ -63,7 +63,7 @@ export function CustomerTable({
 
   if (loading) {
     return (
-      <div className="max-h-[60vh] overflow-auto [scrollbar-gutter:stable] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="max-h-[calc(100dvh-260px-env(safe-area-inset-bottom))] lg:max-h-[calc(100dvh-220px)] overflow-auto [scrollbar-gutter:stable] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         <Table className="min-w-[1000px]">
           <THead>
             <TR>
@@ -119,7 +119,7 @@ export function CustomerTable({
   return (
     <div
       ref={rootRef}
-      className="max-h-[60vh] overflow-auto [scrollbar-gutter:stable] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+      className="max-h-[calc(100dvh-260px-env(safe-area-inset-bottom))] lg:max-h-[calc(100dvh-220px)] overflow-auto [scrollbar-gutter:stable] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]"
     >
       <Table className="min-w-[1000px]">
         <THead>

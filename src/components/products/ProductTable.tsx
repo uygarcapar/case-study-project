@@ -55,7 +55,7 @@ export function ProductTable({
 
   if (loading) {
     return (
-      <div className="max-h-[60vh] overflow-auto [scrollbar-gutter:stable] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="max-h-[calc(100dvh-260px-env(safe-area-inset-bottom))] lg:max-h-[calc(100dvh-220px)] overflow-auto [scrollbar-gutter:stable] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         <Table className="min-w-[800px]">
           <THead>
             <TR>
@@ -111,7 +111,7 @@ export function ProductTable({
   return (
     <div
       ref={rootRef}
-      className="max-h-[60vh] overflow-auto [scrollbar-gutter:stable] rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)]"
+      className="max-h-[calc(100dvh-260px-env(safe-area-inset-bottom))] lg:max-h-[calc(100dvh-220px)] overflow-auto [scrollbar-gutter:stable] rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)]"
     >
       <Table className="min-w-[800px]">
         <THead>
