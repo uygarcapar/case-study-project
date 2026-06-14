@@ -32,6 +32,7 @@ type Props = {
   onDelete: (customer: CustomerRow) => void;
   onEdit: (customer: CustomerRow) => void;
   highlightColumn?: HighlightColumn;
+  searchQuery?: string;
   rootRef?: (node: HTMLDivElement | null) => void;
   sentinelRef?: (node: HTMLDivElement | null) => void;
   showSentinel?: boolean;
@@ -50,6 +51,7 @@ export function CustomerTable({
   onDelete,
   onEdit,
   highlightColumn,
+  searchQuery,
   rootRef,
   sentinelRef,
   showSentinel = false,
@@ -109,9 +111,12 @@ export function CustomerTable({
   }
 
   if (customers.length === 0) {
+    const title = searchQuery
+      ? t("notFound", { query: searchQuery })
+      : t("empty");
     return (
       <div className="overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <EmptyState title={t("empty")} />
+        <EmptyState title={title} />
       </div>
     );
   }

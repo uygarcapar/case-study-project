@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -11,12 +11,14 @@ import { ProductFormModal } from "./ProductFormModal";
 import { NewProductButton } from "./NewProductButton";
 import {
   useDeleteProductMutation,
-  useListProductsQuery,
+  useListProductsPageQuery,
 } from "@/store/slices/productsApi";
-import { useAppDispatch } from "@/store/hooks";
-import { openProductForm } from "@/store/slices/uiSlice";
-import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { openProductForm, setProductsListPage } from "@/store/slices/uiSlice";
 import type { ProductRow } from "@/types/database";
+
+const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const VALID_SORTS: SortKey[] = [
   "newest",
@@ -46,7 +48,6 @@ export function ProductsView() {
         ? (sortParam as SortKey)
         : "newest";
     return { search: "", sort };
-    // Only re-init on first mount or if user navigates from outside (URL change).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -57,56 +58,80 @@ export function ProductsView() {
       : undefined;
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const storedPage = useAppSelector((s) => s.ui.productsListPage);
+  const [page, setPageState] = useState(storedPage);
+  const setPage = useCallback(
+    (next: number | ((prev: number) => number)) => {
+      setPageState((prev) => {
+        const value = typeof next === "function" ? next(prev) : next;
+        dispatch(setProductsListPage(value));
+        return value;
+      });
+    },
+    [dispatch],
+  );
   const [pendingDelete, setPendingDelete] = useState<ProductRow | null>(null);
 
-  const { data, isLoading } = useListProductsQuery();
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(filters.search.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [filters.search]);
+
+  const [resetKey, setResetKey] = useState({
+    search: debouncedSearch,
+    sort: filters.sort,
+    locale,
+  });
+  if (
+    resetKey.search !== debouncedSearch ||
+    resetKey.sort !== filters.sort ||
+    resetKey.locale !== locale
+  ) {
+    setResetKey({ search: debouncedSearch, sort: filters.sort, locale });
+    setPage(0);
+  }
+
+  const { data, isFetching, isLoading } = useListProductsPageQuery({
+    page,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearch,
+    sort: filters.sort,
+    locale,
+  });
+
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
 
-  const filtered = useMemo(() => {
-    let list = data ?? [];
-    if (filters.search.trim()) {
-      const q = filters.search.trim().toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.name.tr.toLowerCase().includes(q) ||
-          p.name.en.toLowerCase().includes(q),
-      );
-    }
-    list = [...list];
-    switch (filters.sort) {
-      case "name_asc":
-        list.sort((a, b) => a.name[locale].localeCompare(b.name[locale]));
-        break;
-      case "name_desc":
-        list.sort((a, b) => b.name[locale].localeCompare(a.name[locale]));
-        break;
-      case "category_asc":
-        list.sort((a, b) => a.category.localeCompare(b.category));
-        break;
-      case "category_desc":
-        list.sort((a, b) => b.category.localeCompare(a.category));
-        break;
-      case "price_asc":
-        list.sort((a, b) => a.price - b.price);
-        break;
-      case "price_desc":
-        list.sort((a, b) => b.price - a.price);
-        break;
-      case "stock_asc":
-        list.sort((a, b) => a.stock - b.stock);
-        break;
-      case "stock_desc":
-        list.sort((a, b) => b.stock - a.stock);
-        break;
-      case "newest":
-      default:
-        list.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-    }
-    return list;
-  }, [data, filters, locale]);
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const hasMore = items.length < total;
+  const isLoadingMore = isFetching && page > 0;
+
+  const [sentinelEl, setSentinelEl] = useState<HTMLDivElement | null>(null);
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!sentinelEl || !hasMore || isFetching) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setPage((p) => p + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px", root: rootEl },
+    );
+    observer.observe(sentinelEl);
+    return () => observer.disconnect();
+  }, [sentinelEl, rootEl, hasMore, isFetching]);
+
+  const rootRef = useCallback((node: HTMLDivElement | null) => {
+    setRootEl(node);
+  }, []);
+  const sentinelRef = useCallback((node: HTMLDivElement | null) => {
+    setSentinelEl(node);
+  }, []);
 
   async function handleConfirmDelete() {
     if (!pendingDelete) return;
@@ -119,10 +144,6 @@ export function ProductsView() {
     }
   }
 
-  const { visibleCount, sentinelRef, rootRef, isLoadingMore, hasMore } =
-    useInfiniteScroll({ total: filtered.length, pageSize: 10 });
-  const visible = filtered.slice(0, visibleCount);
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-4 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -130,12 +151,13 @@ export function ProductsView() {
         <NewProductButton />
       </div>
       <ProductTable
-        products={visible}
+        products={items}
         loading={isLoading}
         loadingMore={isLoadingMore}
         onDelete={(p) => setPendingDelete(p)}
         onEdit={(p) => dispatch(openProductForm(p))}
         highlightColumn={highlightColumn}
+        searchQuery={debouncedSearch}
         rootRef={rootRef}
         sentinelRef={sentinelRef}
         showSentinel={hasMore}

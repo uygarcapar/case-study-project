@@ -20,17 +20,15 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import {
   useDeleteProductMutation,
-  useListProductsQuery,
+  useGetProductsSummaryQuery,
 } from "@/store/slices/productsApi";
-import { useListCustomersQuery } from "@/store/slices/customersApi";
+import { useGetCustomersSummaryQuery } from "@/store/slices/customersApi";
 import { useAppDispatch } from "@/store/hooks";
 import { openProductForm } from "@/store/slices/uiSlice";
 import { ProductFormModal } from "@/components/products/ProductFormModal";
 import { useRole } from "@/lib/auth/useRole";
 import { formatCurrency } from "@/lib/utils";
 import type { ProductRow } from "@/types/database";
-
-const LOW_STOCK_THRESHOLD = 10;
 
 export function DashboardContent() {
   const t = useTranslations("dashboard");
@@ -41,18 +39,16 @@ export function DashboardContent() {
   const dispatch = useAppDispatch();
   const { canWrite } = useRole();
 
-  const products = useListProductsQuery();
-  const customers = useListCustomersQuery();
+  const products = useGetProductsSummaryQuery();
+  const customers = useGetCustomersSummaryQuery();
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
   const [pendingDelete, setPendingDelete] = useState<ProductRow | null>(null);
 
-  const totalProducts = products.data?.length ?? 0;
-  const totalCustomers = customers.data?.length ?? 0;
-  const totalOrders =
-    customers.data?.reduce((sum, c) => sum + c.total_orders, 0) ?? 0;
-  const lowStockCount =
-    products.data?.filter((p) => p.stock <= LOW_STOCK_THRESHOLD).length ?? 0;
-  const recent = (products.data ?? []).slice(0, 10);
+  const totalProducts = products.data?.total ?? 0;
+  const totalCustomers = customers.data?.total ?? 0;
+  const totalOrders = customers.data?.totalOrders ?? 0;
+  const lowStockCount = products.data?.lowStock ?? 0;
+  const recent = products.data?.recent ?? [];
 
   async function handleConfirmDelete() {
     if (!pendingDelete) return;

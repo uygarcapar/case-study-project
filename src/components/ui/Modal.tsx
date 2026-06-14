@@ -57,7 +57,7 @@ export function Modal({ open, onClose, title, children, footer, className }: Pro
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 py-1 text-sm sm:px-6">{children}</div>
+        <div className="flex-1 overflow-y-auto px-3 py-1 pb-4 text-sm sm:px-6">{children}</div>
         {footer && (
           <div className="flex shrink-0 items-center justify-end gap-2 px-4 py-3">
             {footer}

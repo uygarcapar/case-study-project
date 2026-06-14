@@ -10,6 +10,8 @@ type UiState = {
   sidebarOpen: boolean;
   productForm: FormModal<ProductRow>;
   customerForm: FormModal<CustomerRow>;
+  productsListPage: number;
+  customersListPage: number;
 };
 
 const initialState: UiState = {
@@ -17,6 +19,8 @@ const initialState: UiState = {
   sidebarOpen: false,
   productForm: { open: false },
   customerForm: { open: false },
+  productsListPage: 0,
+  customersListPage: 0,
 };
 
 const uiSlice = createSlice({
@@ -47,6 +51,12 @@ const uiSlice = createSlice({
     closeCustomerForm(state) {
       state.customerForm = { open: false };
     },
+    setProductsListPage(state, action: PayloadAction<number>) {
+      state.productsListPage = action.payload;
+    },
+    setCustomersListPage(state, action: PayloadAction<number>) {
+      state.customersListPage = action.payload;
+    },
   },
 });
 
@@ -59,5 +69,7 @@ export const {
   closeProductForm,
   openCustomerForm,
   closeCustomerForm,
+  setProductsListPage,
+  setCustomersListPage,
 } = uiSlice.actions;
 export default uiSlice.reducer;

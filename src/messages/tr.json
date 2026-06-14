@@ -78,7 +78,7 @@
       "status": "Durum",
       "imageUrl": "Görsel URL",
       "image": "Görsel",
-      "uploadImage": "Bilgisayardan yükle",
+      "uploadImage": "Cihazdan yükle",
       "replaceImage": "Görseli değiştir",
       "removeImage": "Görseli kaldır",
       "uploading": "Yükleniyor...",
@@ -95,6 +95,7 @@
       "archived": "Arşiv"
     },
     "empty": "Henüz ürün yok",
+    "notFound": "\"{query}\" için sonuç bulunamadı",
     "clearHighlight": "Sütun vurgusunu kaldır",
     "highlightedColumn": "Vurgulanan: {column}",
     "deleted": "Ürün silindi",
@@ -132,6 +133,7 @@
       "inactive": "Pasif"
     },
     "empty": "Henüz müşteri yok",
+    "notFound": "\"{query}\" için sonuç bulunamadı",
     "deleted": "Müşteri silindi",
     "created": "Müşteri oluşturuldu",
     "updated": "Müşteri güncellendi",

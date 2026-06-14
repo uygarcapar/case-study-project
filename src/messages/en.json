@@ -78,7 +78,7 @@
       "status": "Status",
       "imageUrl": "Image URL",
       "image": "Image",
-      "uploadImage": "Upload from computer",
+      "uploadImage": "Upload from device",
       "replaceImage": "Replace image",
       "removeImage": "Remove image",
       "uploading": "Uploading...",
@@ -95,6 +95,7 @@
       "archived": "Archived"
     },
     "empty": "No products yet",
+    "notFound": "No results for \"{query}\"",
     "clearHighlight": "Clear column highlight",
     "highlightedColumn": "Highlighted: {column}",
     "deleted": "Product deleted",
@@ -132,6 +133,7 @@
       "inactive": "Inactive"
     },
     "empty": "No customers yet",
+    "notFound": "No results for \"{query}\"",
     "deleted": "Customer deleted",
     "created": "Customer created",
     "updated": "Customer updated",

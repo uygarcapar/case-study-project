@@ -23,6 +23,7 @@ type Props = {
   onDelete: (product: ProductRow) => void;
   onEdit: (product: ProductRow) => void;
   highlightColumn?: HighlightColumn;
+  searchQuery?: string;
   rootRef?: (node: HTMLDivElement | null) => void;
   sentinelRef?: (node: HTMLDivElement | null) => void;
   showSentinel?: boolean;
@@ -41,6 +42,7 @@ export function ProductTable({
   onDelete,
   onEdit,
   highlightColumn,
+  searchQuery,
   rootRef,
   sentinelRef,
   showSentinel = false,
@@ -101,9 +103,12 @@ export function ProductTable({
   }
 
   if (products.length === 0) {
+    const title = searchQuery
+      ? t("notFound", { query: searchQuery })
+      : t("empty");
     return (
       <div className="overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <EmptyState title={t("empty")} />
+        <EmptyState title={title} />
       </div>
     );
   }

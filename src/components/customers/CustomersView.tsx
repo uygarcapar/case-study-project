@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -15,12 +15,14 @@ import { CustomerFormModal } from "./CustomerFormModal";
 import { NewCustomerButton } from "./NewCustomerButton";
 import {
   useDeleteCustomerMutation,
-  useListCustomersQuery,
+  useListCustomersPageQuery,
 } from "@/store/slices/customersApi";
-import { useAppDispatch } from "@/store/hooks";
-import { openCustomerForm } from "@/store/slices/uiSlice";
-import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { openCustomerForm, setCustomersListPage } from "@/store/slices/uiSlice";
 import type { CustomerRow } from "@/types/database";
+
+const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const VALID_HIGHLIGHTS: HighlightColumn[] = ["total_orders"];
 
@@ -42,11 +44,23 @@ export function CustomersView() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const storedPage = useAppSelector((s) => s.ui.customersListPage);
+  const [page, setPageState] = useState(storedPage);
+  const setPage = useCallback(
+    (next: number | ((prev: number) => number)) => {
+      setPageState((prev) => {
+        const value = typeof next === "function" ? next(prev) : next;
+        dispatch(setCustomersListPage(value));
+        return value;
+      });
+    },
+    [dispatch],
+  );
   const [pendingDelete, setPendingDelete] = useState<CustomerRow | null>(null);
 
   const initialSort: CustomerSortKey = useMemo(() => {
     const sortParam = searchParams.get("sort");
-    // Backwards compat: dashboard used "orders_desc" before.
     if (sortParam === "orders_desc") return "total_orders_desc";
     if (sortParam && VALID_SORTS.includes(sortParam as CustomerSortKey)) {
       return sortParam as CustomerSortKey;
@@ -63,58 +77,56 @@ export function CustomersView() {
       ? (highlightParam as HighlightColumn)
       : undefined;
 
-  const { data, isLoading } = useListCustomersQuery();
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  const [resetKey, setResetKey] = useState({ search: debouncedSearch, sort });
+  if (resetKey.search !== debouncedSearch || resetKey.sort !== sort) {
+    setResetKey({ search: debouncedSearch, sort });
+    setPage(0);
+  }
+
+  const { data, isFetching, isLoading } = useListCustomersPageQuery({
+    page,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearch,
+    sort,
+  });
+
   const [deleteCustomer, { isLoading: deleting }] = useDeleteCustomerMutation();
 
-  const filtered = useMemo(() => {
-    let list = data ?? [];
-    const q = search.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (c) =>
-          c.full_name.toLowerCase().includes(q) ||
-          c.email.toLowerCase().includes(q),
-      );
-    }
-    list = [...list];
-    switch (sort) {
-      case "name_asc":
-        list.sort((a, b) => a.full_name.localeCompare(b.full_name));
-        break;
-      case "name_desc":
-        list.sort((a, b) => b.full_name.localeCompare(a.full_name));
-        break;
-      case "email_asc":
-        list.sort((a, b) => a.email.localeCompare(b.email));
-        break;
-      case "email_desc":
-        list.sort((a, b) => b.email.localeCompare(a.email));
-        break;
-      case "city_asc":
-        list.sort((a, b) => (a.city ?? "").localeCompare(b.city ?? ""));
-        break;
-      case "city_desc":
-        list.sort((a, b) => (b.city ?? "").localeCompare(a.city ?? ""));
-        break;
-      case "total_orders_asc":
-        list.sort((a, b) => a.total_orders - b.total_orders);
-        break;
-      case "total_orders_desc":
-        list.sort((a, b) => b.total_orders - a.total_orders);
-        break;
-      case "newest":
-      default:
-        list.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-    }
-    return list;
-  }, [data, search, sort]);
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const hasMore = items.length < total;
+  const isLoadingMore = isFetching && page > 0;
 
-  const { visibleCount, sentinelRef, rootRef, isLoadingMore, hasMore } =
-    useInfiniteScroll({ total: filtered.length, pageSize: 10 });
-  const visible = filtered.slice(0, visibleCount);
+  const [sentinelEl, setSentinelEl] = useState<HTMLDivElement | null>(null);
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!sentinelEl || !hasMore || isFetching) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setPage((p) => p + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px", root: rootEl },
+    );
+    observer.observe(sentinelEl);
+    return () => observer.disconnect();
+  }, [sentinelEl, rootEl, hasMore, isFetching]);
+
+  const rootRef = useCallback((node: HTMLDivElement | null) => {
+    setRootEl(node);
+  }, []);
+  const sentinelRef = useCallback((node: HTMLDivElement | null) => {
+    setSentinelEl(node);
+  }, []);
 
   async function handleConfirmDelete() {
     if (!pendingDelete) return;
@@ -143,12 +155,13 @@ export function CustomersView() {
         <NewCustomerButton />
       </div>
       <CustomerTable
-        customers={visible}
+        customers={items}
         loading={isLoading}
         loadingMore={isLoadingMore}
         onDelete={(c) => setPendingDelete(c)}
         onEdit={(c) => dispatch(openCustomerForm(c))}
         highlightColumn={highlightColumn}
+        searchQuery={debouncedSearch}
         rootRef={rootRef}
         sentinelRef={sentinelRef}
         showSentinel={hasMore}

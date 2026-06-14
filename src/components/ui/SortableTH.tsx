@@ -42,8 +42,13 @@ export function SortableTH({
       )}
     >
       <span className="inline-flex items-center gap-1">
+        {align === "right" && (
+          <Icon className={cn("h-3.5 w-3.5", !isActive && "opacity-30")} />
+        )}
         {children}
-        <Icon className={cn("h-3.5 w-3.5", !isActive && "opacity-30")} />
+        {align !== "right" && (
+          <Icon className={cn("h-3.5 w-3.5", !isActive && "opacity-30")} />
+        )}
       </span>
     </TH>
   );
