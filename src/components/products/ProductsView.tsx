@@ -40,13 +40,19 @@ export function ProductsView() {
   const locale = useLocale() as "tr" | "en";
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
+  const storedList = useAppSelector((s) => s.ui.productsList);
 
   const initialFilters: Filters = useMemo(() => {
     const sortParam = searchParams.get("sort");
-    const sort: SortKey =
-      sortParam && VALID_SORTS.includes(sortParam as SortKey)
-        ? (sortParam as SortKey)
-        : "newest";
+    let sort: SortKey = "newest";
+    if (sortParam && VALID_SORTS.includes(sortParam as SortKey)) {
+      sort = sortParam as SortKey;
+    } else if (
+      storedList.sort &&
+      VALID_SORTS.includes(storedList.sort as SortKey)
+    ) {
+      sort = storedList.sort as SortKey;
+    }
     return { search: "", sort };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -59,20 +65,13 @@ export function ProductsView() {
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const storedList = useAppSelector((s) => s.ui.productsList);
-  const [page, setPageState] = useState(() =>
+  const [page, setPage] = useState(() =>
     storedList.sort === initialFilters.sort ? storedList.page : 0,
   );
-  const setPage = useCallback(
-    (next: number | ((prev: number) => number)) => {
-      setPageState((prev) => {
-        const value = typeof next === "function" ? next(prev) : next;
-        dispatch(setProductsListState({ page: value, sort: filters.sort }));
-        return value;
-      });
-    },
-    [dispatch, filters.sort],
-  );
+
+  useEffect(() => {
+    dispatch(setProductsListState({ page, sort: filters.sort }));
+  }, [dispatch, page, filters.sort]);
   const [pendingDelete, setPendingDelete] = useState<ProductRow | null>(null);
 
   useEffect(() => {

@@ -54,25 +54,25 @@ export function CustomersView() {
     if (sortParam && VALID_SORTS.includes(sortParam as CustomerSortKey)) {
       return sortParam as CustomerSortKey;
     }
+    if (
+      storedList.sort &&
+      VALID_SORTS.includes(storedList.sort as CustomerSortKey)
+    ) {
+      return storedList.sort as CustomerSortKey;
+    }
     return "newest";
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [sort, setSort] = useState<CustomerSortKey>(initialSort);
 
-  const [page, setPageState] = useState(() =>
+  const [page, setPage] = useState(() =>
     storedList.sort === initialSort ? storedList.page : 0,
   );
-  const setPage = useCallback(
-    (next: number | ((prev: number) => number)) => {
-      setPageState((prev) => {
-        const value = typeof next === "function" ? next(prev) : next;
-        dispatch(setCustomersListState({ page: value, sort }));
-        return value;
-      });
-    },
-    [dispatch, sort],
-  );
+
+  useEffect(() => {
+    dispatch(setCustomersListState({ page, sort }));
+  }, [dispatch, page, sort]);
 
   const highlightParam = searchParams.get("highlight");
   const highlightColumn: HighlightColumn | undefined =
