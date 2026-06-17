@@ -18,7 +18,7 @@ import {
   useListCustomersPageQuery,
 } from "@/store/slices/customersApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { openCustomerForm, setCustomersListPage } from "@/store/slices/uiSlice";
+import { openCustomerForm, setCustomersListState } from "@/store/slices/uiSlice";
 import type { CustomerRow } from "@/types/database";
 
 const PAGE_SIZE = 10;
@@ -45,18 +45,7 @@ export function CustomersView() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const storedPage = useAppSelector((s) => s.ui.customersListPage);
-  const [page, setPageState] = useState(storedPage);
-  const setPage = useCallback(
-    (next: number | ((prev: number) => number)) => {
-      setPageState((prev) => {
-        const value = typeof next === "function" ? next(prev) : next;
-        dispatch(setCustomersListPage(value));
-        return value;
-      });
-    },
-    [dispatch],
-  );
+  const storedList = useAppSelector((s) => s.ui.customersList);
   const [pendingDelete, setPendingDelete] = useState<CustomerRow | null>(null);
 
   const initialSort: CustomerSortKey = useMemo(() => {
@@ -70,6 +59,20 @@ export function CustomersView() {
   }, []);
 
   const [sort, setSort] = useState<CustomerSortKey>(initialSort);
+
+  const [page, setPageState] = useState(() =>
+    storedList.sort === initialSort ? storedList.page : 0,
+  );
+  const setPage = useCallback(
+    (next: number | ((prev: number) => number)) => {
+      setPageState((prev) => {
+        const value = typeof next === "function" ? next(prev) : next;
+        dispatch(setCustomersListState({ page: value, sort }));
+        return value;
+      });
+    },
+    [dispatch, sort],
+  );
 
   const highlightParam = searchParams.get("highlight");
   const highlightColumn: HighlightColumn | undefined =
@@ -119,7 +122,7 @@ export function CustomersView() {
     );
     observer.observe(sentinelEl);
     return () => observer.disconnect();
-  }, [sentinelEl, rootEl, hasMore, isFetching]);
+  }, [sentinelEl, rootEl, hasMore, isFetching, setPage]);
 
   const rootRef = useCallback((node: HTMLDivElement | null) => {
     setRootEl(node);

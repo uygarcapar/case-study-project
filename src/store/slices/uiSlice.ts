@@ -5,13 +5,18 @@ export type ThemeMode = "light" | "dark";
 
 type FormModal<T> = { open: false } | { open: true; entity: T | null };
 
+type ListScrollState = {
+  page: number;
+  sort: string;
+};
+
 type UiState = {
   theme: ThemeMode;
   sidebarOpen: boolean;
   productForm: FormModal<ProductRow>;
   customerForm: FormModal<CustomerRow>;
-  productsListPage: number;
-  customersListPage: number;
+  productsList: ListScrollState;
+  customersList: ListScrollState;
 };
 
 const initialState: UiState = {
@@ -19,8 +24,8 @@ const initialState: UiState = {
   sidebarOpen: false,
   productForm: { open: false },
   customerForm: { open: false },
-  productsListPage: 0,
-  customersListPage: 0,
+  productsList: { page: 0, sort: "" },
+  customersList: { page: 0, sort: "" },
 };
 
 const uiSlice = createSlice({
@@ -51,11 +56,11 @@ const uiSlice = createSlice({
     closeCustomerForm(state) {
       state.customerForm = { open: false };
     },
-    setProductsListPage(state, action: PayloadAction<number>) {
-      state.productsListPage = action.payload;
+    setProductsListState(state, action: PayloadAction<ListScrollState>) {
+      state.productsList = action.payload;
     },
-    setCustomersListPage(state, action: PayloadAction<number>) {
-      state.customersListPage = action.payload;
+    setCustomersListState(state, action: PayloadAction<ListScrollState>) {
+      state.customersList = action.payload;
     },
   },
 });
@@ -69,7 +74,7 @@ export const {
   closeProductForm,
   openCustomerForm,
   closeCustomerForm,
-  setProductsListPage,
-  setCustomersListPage,
+  setProductsListState,
+  setCustomersListState,
 } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -14,7 +14,7 @@ import {
   useListProductsPageQuery,
 } from "@/store/slices/productsApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { openProductForm, setProductsListPage } from "@/store/slices/uiSlice";
+import { openProductForm, setProductsListState } from "@/store/slices/uiSlice";
 import type { ProductRow } from "@/types/database";
 
 const PAGE_SIZE = 10;
@@ -59,17 +59,19 @@ export function ProductsView() {
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const storedPage = useAppSelector((s) => s.ui.productsListPage);
-  const [page, setPageState] = useState(storedPage);
+  const storedList = useAppSelector((s) => s.ui.productsList);
+  const [page, setPageState] = useState(() =>
+    storedList.sort === initialFilters.sort ? storedList.page : 0,
+  );
   const setPage = useCallback(
     (next: number | ((prev: number) => number)) => {
       setPageState((prev) => {
         const value = typeof next === "function" ? next(prev) : next;
-        dispatch(setProductsListPage(value));
+        dispatch(setProductsListState({ page: value, sort: filters.sort }));
         return value;
       });
     },
-    [dispatch],
+    [dispatch, filters.sort],
   );
   const [pendingDelete, setPendingDelete] = useState<ProductRow | null>(null);
 
@@ -124,7 +126,7 @@ export function ProductsView() {
     );
     observer.observe(sentinelEl);
     return () => observer.disconnect();
-  }, [sentinelEl, rootEl, hasMore, isFetching]);
+  }, [sentinelEl, rootEl, hasMore, isFetching, setPage]);
 
   const rootRef = useCallback((node: HTMLDivElement | null) => {
     setRootEl(node);
