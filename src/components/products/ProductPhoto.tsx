@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,9 +11,19 @@ type Props = {
 };
 
 export function ProductPhoto({ src, alt, iconClassName = "h-10 w-10" }: Props) {
+  const imgRef = useRef<HTMLImageElement>(null);
   const [status, setStatus] = useState<"loading" | "loaded" | "error">(
     src ? "loading" : "error",
   );
+
+  useEffect(() => {
+    if (!src) return;
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      setStatus("loaded");
+    }
+  }, [src]);
+
   const showFallback = !src || status !== "loaded";
 
   return (
@@ -26,6 +36,7 @@ export function ProductPhoto({ src, alt, iconClassName = "h-10 w-10" }: Props) {
       {src && status !== "error" && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={imgRef}
           src={src}
           alt={alt}
           className={cn(
