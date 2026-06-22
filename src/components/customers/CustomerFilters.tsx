@@ -8,8 +8,8 @@ type Props = {
   onSearchChange: (next: string) => void;
 };
 
-export function ProductFilters({ search, onSearchChange }: Props) {
-  const t = useTranslations("products");
+export function CustomerFilters({ search, onSearchChange }: Props) {
+  const t = useTranslations("customers");
 
   return (
     <label className="relative block w-full sm:max-w-md rounded-full border border-[var(--color-border)]">

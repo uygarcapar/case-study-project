@@ -34,7 +34,7 @@ export async function uploadProductImage(file: File): Promise<UploadResult> {
  * Extract storage path from a public URL.
  * Returns null if URL does not point to our bucket (e.g. external Unsplash URL).
  */
-export function extractStoragePath(url: string | null): string | null {
+function extractStoragePath(url: string | null): string | null {
   if (!url) return null;
   const marker = `/storage/v1/object/public/${BUCKET}/`;
   const idx = url.indexOf(marker);

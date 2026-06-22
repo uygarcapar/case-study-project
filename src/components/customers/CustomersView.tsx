@@ -2,20 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import {
-  CustomerTable,
-  type HighlightColumn,
-  type CustomerSortKey,
-} from "./CustomerTable";
+import { CustomerTable, type HighlightColumn } from "./CustomerTable";
+import { CustomerFilters } from "./CustomerFilters";
 import { CustomerFormModal } from "./CustomerFormModal";
 import { NewCustomerButton } from "./NewCustomerButton";
 import {
   useDeleteCustomerMutation,
   useListCustomersPageQuery,
+  type CustomerSortKey,
 } from "@/store/slices/customersApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { openCustomerForm, setCustomersListState } from "@/store/slices/uiSlice";
@@ -145,16 +142,7 @@ export function CustomersView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-4 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="relative block w-full sm:max-w-md rounded-full border border-[var(--color-border)]">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-fg-muted)]" />
-          <input
-            type="search"
-            placeholder={t("search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-full bg-[var(--color-surface)] pl-10 pr-3 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-muted)] outline-none focus:outline-none focus-visible:outline-none"
-          />
-        </label>
+        <CustomerFilters search={search} onSearchChange={setSearch} />
         <NewCustomerButton />
       </div>
       <CustomerTable

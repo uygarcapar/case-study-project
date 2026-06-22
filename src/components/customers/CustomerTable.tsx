@@ -10,20 +10,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SortableTH } from "@/components/ui/SortableTH";
 import { useRole } from "@/lib/auth/useRole";
 import { cn } from "@/lib/utils";
+import type { CustomerSortKey } from "@/store/slices/customersApi";
 import type { CustomerRow } from "@/types/database";
 
 export type HighlightColumn = "total_orders";
-
-export type CustomerSortKey =
-  | "newest"
-  | "name_asc"
-  | "name_desc"
-  | "email_asc"
-  | "email_desc"
-  | "city_asc"
-  | "city_desc"
-  | "total_orders_asc"
-  | "total_orders_desc";
 
 type Props = {
   customers: CustomerRow[];

@@ -12,10 +12,3 @@ export function formatCurrency(amount: number, locale: "tr" | "en") {
     maximumFractionDigits: 2,
   }).format(amount);
 }
-
-export function formatDate(value: string | Date, locale: "tr" | "en") {
-  const date = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", {
-    dateStyle: "medium",
-  }).format(date);
-}

@@ -8,7 +8,7 @@ export type AuthorizedUser = {
   role: UserRole;
 };
 
-export async function getAuthorizedUser(): Promise<AuthorizedUser | null> {
+async function getAuthorizedUser(): Promise<AuthorizedUser | null> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

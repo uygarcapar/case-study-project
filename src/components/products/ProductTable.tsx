@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SortableTH } from "@/components/ui/SortableTH";
 import { ProductPhoto } from "./ProductPhoto";
-import type { SortKey } from "./ProductFilters";
+import type { ProductSortKey } from "@/store/slices/productsApi";
 import { useRole } from "@/lib/auth/useRole";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { ProductRow } from "@/types/database";
@@ -27,8 +27,8 @@ type Props = {
   rootRef?: (node: HTMLDivElement | null) => void;
   sentinelRef?: (node: HTMLDivElement | null) => void;
   showSentinel?: boolean;
-  currentSort?: SortKey;
-  onSortChange?: (sort: SortKey) => void;
+  currentSort?: ProductSortKey;
+  onSortChange?: (sort: ProductSortKey) => void;
 };
 
 const HIGHLIGHT_TH = "bg-[var(--color-warning)]/20 text-[var(--color-fg)]";
@@ -126,7 +126,7 @@ export function ProductTable({
               <SortableTH
                 field="name"
                 currentSort={currentSort}
-                onSortChange={(s) => onSortChange(s as SortKey)}
+                onSortChange={(s) => onSortChange(s as ProductSortKey)}
               >
                 {t("table.name")}
               </SortableTH>
@@ -137,7 +137,7 @@ export function ProductTable({
               <SortableTH
                 field="category"
                 currentSort={currentSort}
-                onSortChange={(s) => onSortChange(s as SortKey)}
+                onSortChange={(s) => onSortChange(s as ProductSortKey)}
                 className="w-32"
               >
                 {t("table.category")}
@@ -149,7 +149,7 @@ export function ProductTable({
               <SortableTH
                 field="price"
                 currentSort={currentSort}
-                onSortChange={(s) => onSortChange(s as SortKey)}
+                onSortChange={(s) => onSortChange(s as ProductSortKey)}
                 align="right"
                 className="w-28"
               >
@@ -162,7 +162,7 @@ export function ProductTable({
               <SortableTH
                 field="stock"
                 currentSort={currentSort}
-                onSortChange={(s) => onSortChange(s as SortKey)}
+                onSortChange={(s) => onSortChange(s as ProductSortKey)}
                 align="right"
                 className="w-20"
               >

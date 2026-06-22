@@ -5,13 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { ProductFilters, type Filters, type SortKey } from "./ProductFilters";
+import { ProductFilters } from "./ProductFilters";
 import { ProductTable, type HighlightColumn } from "./ProductTable";
 import { ProductFormModal } from "./ProductFormModal";
 import { NewProductButton } from "./NewProductButton";
 import {
   useDeleteProductMutation,
   useListProductsPageQuery,
+  type ProductSortKey,
 } from "@/store/slices/productsApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { openProductForm, setProductsListState } from "@/store/slices/uiSlice";
@@ -20,7 +21,7 @@ import type { ProductRow } from "@/types/database";
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
 
-const VALID_SORTS: SortKey[] = [
+const VALID_SORTS: ProductSortKey[] = [
   "newest",
   "name_asc",
   "name_desc",
@@ -42,18 +43,18 @@ export function ProductsView() {
   const searchParams = useSearchParams();
   const storedList = useAppSelector((s) => s.ui.productsList);
 
-  const initialFilters: Filters = useMemo(() => {
+  const initialSort: ProductSortKey = useMemo(() => {
     const sortParam = searchParams.get("sort");
-    let sort: SortKey = "newest";
-    if (sortParam && VALID_SORTS.includes(sortParam as SortKey)) {
-      sort = sortParam as SortKey;
-    } else if (
-      storedList.sort &&
-      VALID_SORTS.includes(storedList.sort as SortKey)
-    ) {
-      sort = storedList.sort as SortKey;
+    if (sortParam && VALID_SORTS.includes(sortParam as ProductSortKey)) {
+      return sortParam as ProductSortKey;
     }
-    return { search: "", sort };
+    if (
+      storedList.sort &&
+      VALID_SORTS.includes(storedList.sort as ProductSortKey)
+    ) {
+      return storedList.sort as ProductSortKey;
+    }
+    return "newest";
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -63,35 +64,36 @@ export function ProductsView() {
       ? (highlightParam as HighlightColumn)
       : undefined;
 
-  const [filters, setFilters] = useState<Filters>(initialFilters);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<ProductSortKey>(initialSort);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(() =>
-    storedList.sort === initialFilters.sort ? storedList.page : 0,
+    storedList.sort === initialSort ? storedList.page : 0,
   );
 
   useEffect(() => {
-    dispatch(setProductsListState({ page, sort: filters.sort }));
-  }, [dispatch, page, filters.sort]);
+    dispatch(setProductsListState({ page, sort }));
+  }, [dispatch, page, sort]);
   const [pendingDelete, setPendingDelete] = useState<ProductRow | null>(null);
 
   useEffect(() => {
     const id = setTimeout(() => {
-      setDebouncedSearch(filters.search.trim());
+      setDebouncedSearch(search.trim());
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(id);
-  }, [filters.search]);
+  }, [search]);
 
   const [resetKey, setResetKey] = useState({
     search: debouncedSearch,
-    sort: filters.sort,
+    sort,
     locale,
   });
   if (
     resetKey.search !== debouncedSearch ||
-    resetKey.sort !== filters.sort ||
+    resetKey.sort !== sort ||
     resetKey.locale !== locale
   ) {
-    setResetKey({ search: debouncedSearch, sort: filters.sort, locale });
+    setResetKey({ search: debouncedSearch, sort, locale });
     setPage(0);
   }
 
@@ -99,7 +101,7 @@ export function ProductsView() {
     page,
     pageSize: PAGE_SIZE,
     search: debouncedSearch,
-    sort: filters.sort,
+    sort,
     locale,
   });
 
@@ -148,7 +150,7 @@ export function ProductsView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-4 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <ProductFilters value={filters} onChange={setFilters} />
+        <ProductFilters search={search} onSearchChange={setSearch} />
         <NewProductButton />
       </div>
       <ProductTable
@@ -162,8 +164,8 @@ export function ProductsView() {
         rootRef={rootRef}
         sentinelRef={sentinelRef}
         showSentinel={hasMore}
-        currentSort={filters.sort}
-        onSortChange={(sort) => setFilters({ ...filters, sort: sort as SortKey })}
+        currentSort={sort}
+        onSortChange={(s) => setSort(s as ProductSortKey)}
       />
       <ConfirmDialog
         open={pendingDelete !== null}
